@@ -1,5 +1,8 @@
 package marsRover;
 
+import java.util.ArrayList;
+import java.util.Objects;
+
 public class Rover {
 	private final String name;
 	private Position position;
@@ -48,22 +51,30 @@ public class Rover {
 		return "at " + position +" towards the " + direction;
 	}
 		
-	public void move() {
+	public void move(String letter) {
+		int way;
+		if("f".equals(letter)) {
+			way=1;
+		} else {
+			way=-1;
+		}
 		switch(direction) {
 			case NORTH:
-				position.setY(position.getY() + 1);
+				position.setY((position.getY() + way + Grid.GridHeight()) % Grid.GridHeight());
 				break;
 			case EAST:
-				position.setX(position.getX() + 1);
+				position.setX((position.getX() + way + Grid.GridWidth()) % Grid.GridWidth());
 				break;
 			case SOUTH:
-				position.setY(position.getY() - 1);
+				position.setY((position.getY() - way + Grid.GridHeight()) % Grid.GridHeight());
 				break;
 			case WEST:
-				position.setX(position.getX() - 1);
+				position.setX((position.getX() - way + Grid.GridWidth()) % Grid.GridWidth());
 				break;
 			}
-		}
+	}
+	
+	
 
 	
 	public void turnLeft() {
@@ -100,9 +111,48 @@ public class Rover {
 		}
 	}
 
-		public void moveASelectedNumberOfTimes(Integer number) {
-			for (int i = 0; i < number; i++) {
-				move();
+	public void moveASelectedNumberOfTimes(Integer number, String letter) {
+		for (int i = 0; i < number; i++) {
+			move(letter);
+		}
+	}
+	
+	public void moveAroundTheGrid(ArrayList<String> commands) {
+		for ( String command : commands) {
+			switch(command) {
+				case "f":
+					move(command);
+					break;
+				case "b":
+					move(command);
+					break;
+				case "l":
+					turnLeft();
+					break;
+				case "r":
+					turnRight();
+					break;
 			}
 		}
+	}
+
+	@Override
+	public int hashCode() {
+		return Objects.hash(direction, name, position);
+	}
+
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj)
+			return true;
+		if (obj == null)
+			return false;
+		if (getClass() != obj.getClass())
+			return false;
+		Rover other = (Rover) obj;
+		return direction == other.direction && Objects.equals(name, other.name)
+				&& Objects.equals(position, other.position);
+	}
+		
+		
 }

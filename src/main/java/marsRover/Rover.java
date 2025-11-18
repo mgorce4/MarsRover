@@ -7,11 +7,23 @@ public class Rover {
 	private final String name;
 	private Position position;
 	private Direction direction;
+	private Obstacle[] obstacles;
+	private Obstacle lastObstacleEncountered;
 	
 	public Rover(String name,Position position, Direction direction) {
 		this.name=name;
 		this.position=position;
 		this.direction=direction;
+		this.obstacles = new Obstacle[0];
+		this.lastObstacleEncountered = null;
+	}
+	
+	public Rover(String name,Position position, Direction direction, Obstacle[] obstacles) {
+		this.name=name;
+		this.position=position;
+		this.direction=direction;
+		this.obstacles = obstacles != null ? obstacles : new Obstacle[0];
+		this.lastObstacleEncountered = null;
 	}
 	
 	public Rover(Integer x,Integer y,Direction direction) {
@@ -47,17 +59,65 @@ public class Rover {
 		return name;
 	}
 	
+	public void setObstacles(Obstacle[] obstacles) {
+		this.obstacles = obstacles != null ? obstacles : new Obstacle[0];
+	}
+	
+	public Obstacle getLastObstacleEncountered() {
+		return lastObstacleEncountered;
+	}
+	
 	public String getLocation() {
 		return "at " + position +" towards the " + direction;
 	}
+	
+	private boolean isObstacleAt(Position targetPosition) {
+		for (Obstacle obstacle : obstacles) {
+			if (obstacle.position().equals(targetPosition)) {
+				lastObstacleEncountered = obstacle;
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	private Position calculateNextPosition(int way) {
+		int newX = position.getX();
+		int newY = position.getY();
 		
-	public void move(String letter) {
+		switch(direction) {
+			case NORTH:
+				newY = (position.getY() + way + Grid.GridHeight()) % Grid.GridHeight();
+				break;
+			case EAST:
+				newX = (position.getX() + way + Grid.GridWidth()) % Grid.GridWidth();
+				break;
+			case SOUTH:
+				newY = (position.getY() - way + Grid.GridHeight()) % Grid.GridHeight();
+				break;
+			case WEST:
+				newX = (position.getX() - way + Grid.GridWidth()) % Grid.GridWidth();
+				break;
+		}
+		
+		return new Position(newX, newY);
+	}
+		
+	public boolean move(String letter) {
 		int way;
 		if("f".equals(letter)) {
 			way=1;
 		} else {
 			way=-1;
 		}
+		
+		Position nextPosition = calculateNextPosition(way);
+		
+		if (isObstacleAt(nextPosition)) {
+			return false; // Movement blocked by obstacle
+		}
+		
+		// No obstacle, proceed with movement
 		switch(direction) {
 			case NORTH:
 				position.setY((position.getY() + way + Grid.GridHeight()) % Grid.GridHeight());
@@ -71,7 +131,9 @@ public class Rover {
 			case WEST:
 				position.setX((position.getX() - way + Grid.GridWidth()) % Grid.GridWidth());
 				break;
-			}
+		}
+		
+		return true; // Movement successful
 	}
 	
 	
@@ -113,7 +175,11 @@ public class Rover {
 
 	public void moveASelectedNumberOfTimes(Integer number, String letter) {
 		for (int i = 0; i < number; i++) {
-			move(letter);
+			if (!move(letter)) {
+				System.out.println("Obstacle encountered at " + lastObstacleEncountered.position() + 
+								   ". Stopped at " + position);
+				break;
+			}
 		}
 	}
 	
@@ -121,10 +187,18 @@ public class Rover {
 		for ( String command : commands) {
 			switch(command) {
 				case "f":
-					move(command);
+					if (!move(command)) {
+						System.out.println("Obstacle encountered at " + lastObstacleEncountered.position() + 
+										   ". Stopped at " + position);
+						return; // Stop processing further commands
+					}
 					break;
 				case "b":
-					move(command);
+					if (!move(command)) {
+						System.out.println("Obstacle encountered at " + lastObstacleEncountered.position() + 
+										   ". Stopped at " + position);
+						return; // Stop processing further commands
+					}
 					break;
 				case "l":
 					turnLeft();
@@ -135,6 +209,8 @@ public class Rover {
 			}
 		}
 	}
+	
+
 
 	@Override
 	public int hashCode() {
